@@ -5,7 +5,7 @@ clip < ~/.ssh/id_rsa.pub
 
 .............
 $ cat id_rsa.pub
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDMFE+4sUVaiQOKU8DwECyTEpIKxfgvXGza1PaU7R720h+1F2hzRWoJ7WbayrVo+KuI+DMWN/A2rgDdqZOAABRbOj7NwgCl3X1I8J6wJxUv9FQ6N9KuaHIk0hS7rMIZwf3/uNQWDe0onMX3cuMWJ6Q8nzvY4b6PnrxvQCeDbwaJl2W1YmzVwmQ6W3RrNsvKtmRDdr0RJDr2m11NvEPwg+F/FmoANYORE+YWaIDAzZeMVMDMKUxg/sleqT4fxCQiIgVDNNLqnryZPHdm5DBPoEqxEosccQV/Ym2cHXZnR11klKfHdFtSlLkk+zMQPzvq/bMNLEjscr6z4PYeECUNvf+fvhJNblCyt1xT5Y+peLm3ixZ6ZK21KGHBvozOFrNRcacvHclg3eUixork98ykhsXrukzybKZ9vGOkTolweeYI2Aaow3o897rhkyq1zGQLPa4oCeWxjKK09YFUjSTqlHMAsjBpEWAKH8CqUo2GewiyYByJFrS/qQYEsQN2ABG8A7aV4sx38DaytIhw0xw4jDyCgAYCUv9+lwytg+RJd4NMo5HuQo/GntO4E9DxeaSccAjksOgvL/celVmvVeOAM3bBKrH/EBLih/0q6RWuwn1Pf3lwhi7/uQcZ9MKgBWxtCbjUQASQ7aMPqboM4bGl+dgUzLtYWSXwfd46a1AEUKY+jQ== thephuoc@live.com
+
 
 
 git clone https://github.com/thephuoc/GitHub_SSH_2.git
