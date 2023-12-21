@@ -1,0 +1,13 @@
+hub1 thephuoc@live.com
+
+git@hub1:thephuoc/GitHub_SSH_2.git
+
+hub2 thephuoc@outlook.com
+
+git@hub2:thephuoc160/Git_Push_SSH.git
+
+
+
+======================================
+I have two Github accounts: oanhnn (personal) and superman (for work). I want to use both accounts on same computer (without typing password everytime, when doing git push or pull).
+https://gist.github.com/oanhnn/80a89405ab9023894df7

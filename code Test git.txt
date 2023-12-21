@@ -1,0 +1,11 @@
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+ssh -T git@hub1
+ssh -T git@hub2
+
+
+$ git config user.email "thephuoc@live.com"
+$ git config user.name  "thephuoc"
+
+
+$ git config user.email "thephuoc@outlook.com"
+$ git config user.name  "thephuoc160"
