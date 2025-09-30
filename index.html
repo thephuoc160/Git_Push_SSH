@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>App thi trắc nghiệm từ Excel (v22.1)</title>
+  <style>
+    :root{ --ok:#19c37d; --bad:#ef4444; --bg:#fff; --fg:#111; --card:#fff; --border:#d1d5db; --muted:#6b7280; }
+    body.dark{ --bg:#0f172a; --fg:#f1f5f9; --card:#1e293b; --border:#334155; --muted:#94a3b8; }
+    body{font-family:Inter,"Be Vietnam Pro",Arial,sans-serif;margin:0;padding:0;background:var(--bg);color:var(--fg);transition:background .3s,color .3s}
+    .wrap{max-width:1200px;margin:24px auto;padding:0 16px}
+    .card{border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;background:var(--card)}
+    .btn{padding:8px 12px;margin:4px 0;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:#f3f4f6}
+    body.dark .btn{background:#334155;color:#f1f5f9}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .toolbar{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+    .toolbar .left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .toolbar .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .timer{font-weight:800;font-variant-numeric:tabular-nums;border:1px dashed var(--border);border-radius:10px;padding:8px 10px}
+    .q{font-weight:700;margin:14px 0}
+    .opt{display:flex;gap:10px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:8px 0}
+    .opt.correct{background:#e9fff5;border-color:var(--ok);font-weight:700}
+    .opt.wrong{background:#ffefef;border-color:var(--bad)}
+    .muted{color:var(--muted)}
+    input[type="number"]{width:80px}
+    .stats{margin-left:12px;font-weight:600;color:var(--muted)}
+    .globalstats{margin-left:12px;font-weight:600;color:var(--muted)}
+  </style>
+</head>
+<body class="light">
+  <div class="wrap">
+    <!-- TOP BAR -->
+    <div class="card toolbar">
+      <div class="left">
+        <input id="file" type="file" accept=".xlsx,.xls" />
+        <button id="btnLoad" class="btn">Nạp đề</button>
+        <label>Số câu: <input id="numQ" type="number" value="30" min="1"></label>
+        <label><input id="chkShuffle" type="checkbox" checked> Ngẫu nhiên</label>
+        <button id="btnMake" class="btn">Tạo đề</button>
+        <span id="bankStat" class="muted">Chưa nạp đề</span>
+        <span id="stats" class="stats"></span>
+        <button id="btnTheme" class="btn">Chế độ: Sáng</button>
+      </div>
+      <div class="right">
+        <div class="timer">⏳ <span id="timer">--:--</span></div>
+        <button id="btnSubmit" class="btn" disabled>Nộp bài</button>
+        <button id="btnExport" class="btn" disabled>Lưu bài thi</button>
+        <span id="globalStats" class="globalstats"></span>
+      </div>
+    </div>
+
+    <!-- FULL-WIDTH QUESTIONS -->
+    <div id="quiz" class="card">Danh sách câu hỏi sẽ hiển thị tại đây…</div>
+  </div>
+
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+  let bank=[], quiz=[];
+  let secondsLeft=0, tHandle=null;
+  // Con trỏ/Pool để đảm bảo lần sau khác lần trước
+  let nextStart=0;                   // chế độ tuần tự
+  let remainingShuffle=[];           // danh sách index còn lại để bốc ngẫu nhiên
+  let lastBatch=[];                  // lưu index của lô gần nhất (tránh trùng ngay lần kế tiếp)
+
+  const el=id=>document.getElementById(id);
+  const LETTERS=['A','B','C','D','E','F'];
+  const rxKey=/^\s*([A-F])\s*[\.|\)|:|-]?/i;
+
+  function splitLetters(s){return String(s||'').toUpperCase().split(/[^A-F]+/).map(x=>x.trim()).filter(x=>/^[A-F]$/.test(x));}
+  function asKeySet(s){return new Set(splitLetters(s));}
+  function escapeHtml(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+  function shuffleArr(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+  function resetPools(){
+    nextStart=0;
+    remainingShuffle=[...Array(bank.length).keys()];
+    lastBatch=[];
+  }
+
+  el('btnLoad').onclick=async()=>{
+    const f=el('file').files?.[0]; if(!f){alert('Chọn file');return}
+    const ab=await f.arrayBuffer(); const wb=XLSX.read(ab,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{defval:"", raw:true});
+    bank=[]; let cur=null;
+    rows.forEach(r=>{
+      const A=(r['NoiDung']??'').toString();
+      const B=(r['DapAnDung']??'').toString();
+      const D=(r['CauHoi']??'').toString().trim().toUpperCase();
+      if(D==='CH'){
+        cur={question:A, opts:[], correct:asKeySet(B), _used:new Set()}; bank.push(cur);
+      } else if(cur && A.trim()!==''){
+        let key=''; const m=A.match(rxKey); if(m){key=m[1].toUpperCase();} else {key=LETTERS.find(ch=>!cur._used.has(ch))||'X';}
+        if(cur._used.has(key)) key=LETTERS.find(ch=>!cur._used.has(ch))||key; cur._used.add(key);
+        cur.opts.push({key,text:A});
+        const mark=(B||'').toString().trim(); if(mark!==''){const letters=splitLetters(mark); if(letters.length===0||letters.includes(key)) cur.correct.add(key);}
+      }
+    });
+    bank.forEach(q=>delete q._used);
+    resetPools();
+    el('bankStat').textContent=`Đã nạp ${bank.length} câu hỏi.`;
+    el('stats').textContent='';
+    el('globalStats').textContent='';
+  };
+
+  function fmt(secs){const m=String(Math.floor(secs/60)).padStart(2,'0');const s=String(secs%60).padStart(2,'0');return `${m}:${s}`;}
+  function stopTimer(){if(tHandle){clearInterval(tHandle);tHandle=null;}}
+  function startTimer(mins){stopTimer();secondsLeft=Math.max(1,mins)*60;el('timer').textContent=fmt(secondsLeft);
+    tHandle=setInterval(()=>{secondsLeft--;el('timer').textContent=fmt(Math.max(0,secondsLeft));if(secondsLeft<=0){stopTimer();autoSubmit();}},1000);
+  }
+
+  el('btnMake').onclick=()=>{
+    if(bank.length===0){alert('Bạn chưa nạp đề');return}
+    const want=parseInt(el('numQ').value||'30',10); const n=Math.max(1,Math.min(isFinite(want)?want:30, bank.length));
+    const doShuffle = el('chkShuffle').checked;
+
+    if(doShuffle){
+      // Đảm bảo lô mới khác lô trước và không lặp cho tới khi cạn pool
+      if(remainingShuffle.length < n){
+        // reset pool mới
+        remainingShuffle=[...Array(bank.length).keys()];
+        // nếu có thể, loại bỏ ngay các câu vừa ra (tránh trùng lô liền kề)
+        if(n < bank.length && lastBatch.length){
+          const lb=new Set(lastBatch);
+          remainingShuffle = remainingShuffle.filter(i=>!lb.has(i));
+        }
+      }
+      // xáo và lấy n phần tử đầu
+      shuffleArr(remainingShuffle);
+      const pick = remainingShuffle.splice(0, n);
+      quiz = pick.map(i=>bank[i]);
+      lastBatch = pick.slice();
+    } else {
+      // Tuần tự: lô mới tiếp nối lô cũ, khác lần trước tới khi hết ngân hàng
+      const start=nextStart; const end=Math.min(start+n, bank.length);
+      const idx=[]; for(let i=start;i<end;i++) idx.push(i);
+      if(end-start < n && bank.length > 0){ // wrap nếu cần
+        for(let i=0; i< (n-(end-start)); i++) idx.push(i);
+      }
+      quiz = idx.map(i=>bank[i]);
+      nextStart = (start + n) % bank.length;
+      lastBatch = idx.slice();
+    }
+
+    renderQuiz();
+    el('btnSubmit').disabled=false; el('btnExport').disabled=false;
+    startTimer(quiz.length);
+    el('stats').textContent=`Đúng 0/${quiz.length}`;
+    updateGlobalStats();
+  };
+
+  function renderQuiz(){
+    const box=el('quiz'); box.innerHTML='';
+    quiz.forEach((q,i)=>{
+      const card=document.createElement('div'); card.className='qcard';
+      card.innerHTML=`<div class='q'>Câu ${i+1}. ${escapeHtml(q.question)}</div>`;
+      const multi=q.correct.size>1;
+      q.opts.forEach(o=>{
+        const line=document.createElement('label'); line.className='opt';
+        const inp=document.createElement('input'); inp.type=multi?'checkbox':'radio'; inp.name='q'+i; inp.value=o.key;
+        inp.addEventListener('change',()=>{updateStats(); updateGlobalStats();});
+        line.appendChild(inp); line.appendChild(document.createTextNode(' '+o.text)); card.appendChild(line);
+      });
+      const peek=document.createElement('button'); peek.className='btn'; peek.textContent='Kiểm tra câu này'; peek.onclick=()=>{peekQuestion(card,q); updateStats(); updateGlobalStats();};
+      card.appendChild(peek); box.appendChild(card);
+    });
+  }
+
+  function peekQuestion(card,q){
+    card.querySelectorAll('label.opt').forEach(l=>{l.classList.remove('correct','wrong');const key=l.querySelector('input').value.toUpperCase();if(q.correct.has(key)) l.classList.add('correct');});
+  }
+
+  function calcRight(){
+    let right=0;
+    quiz.forEach((q,i)=>{
+      const picked=[...document.querySelectorAll(`input[name=q${i}]:checked`)].map(x=>x.value.toUpperCase());
+      if(q.correct.size<=1){ if(picked.length===1 && q.correct.has(picked[0])) right++; }
+      else { if(picked.length===q.correct.size && picked.every(k=>q.correct.has(k))) right++; }
+    });
+    return right;
+  }
+
+  function updateStats(){
+    const total=quiz.length||0;
+    const right=calcRight();
+    el('stats').textContent=`Đúng ${right}/${total}`;
+  }
+
+  function updateGlobalStats(){
+    const right=calcRight();
+    const totalBank=bank.length||0;
+    const percent=totalBank?((right/totalBank*100).toFixed(1)):0;
+    el('globalStats').textContent=`Tổng đúng: ${right}/${totalBank} (${percent}%)`;
+  }
+
+  function gradeAndPaint(){
+    let right=0; const cards=document.querySelectorAll('.qcard');
+    quiz.forEach((q,i)=>{
+      const card=cards[i];
+      card.querySelectorAll('label.opt').forEach(l=>{
+        const key=l.querySelector('input').value.toUpperCase();
+        if(q.correct.has(key)) l.classList.add('correct');
+        else if(l.querySelector('input').checked) l.classList.add('wrong');
+      });
+      const picked=[...card.querySelectorAll(`input[name=q${i}]:checked`)].map(x=>x.value.toUpperCase());
+      if(q.correct.size<=1){if(picked.length===1&&q.correct.has(picked[0])) right++;}
+      else{if(picked.length===q.correct.size&&picked.every(k=>q.correct.has(k))) right++;}
+    });
+    el('stats').textContent=`Đúng ${right}/${quiz.length}`;
+    updateGlobalStats();
+    return right;
+  }
+
+  function autoSubmit(){const right=gradeAndPaint();el('btnSubmit').disabled=true;alert(`Hết giờ. Bạn đúng ${right}/${quiz.length} câu.`);}
+  el('btnSubmit').onclick=()=>{stopTimer();const right=gradeAndPaint();el('btnSubmit').disabled=true;alert(`Bạn làm đúng ${right}/${quiz.length} câu.`);};
+
+  el('btnExport').onclick=()=>{
+    const src=quiz.length?quiz:bank;
+    let html=`<!DOCTYPE html><html lang='vi'><head><meta charset='utf-8'><title>Bài thi đã lưu</title><style>body{font-family:Inter,Arial,sans-serif;padding:20px;line-height:1.6;color:#111}.q{font-weight:700;margin-top:16px}.opt{margin:6px 0;padding:8px;border:1px solid #ccc;border-radius:8px}.correct{background:#e9fff5;border-color:#19c37d;font-weight:700}</style></head><body>`;
+    src.forEach((q,i)=>{html+=`<div class='q'>Câu ${i+1}. ${escapeHtml(q.question)}</div>`;q.opts.forEach(o=>{const isTrue=q.correct.has(o.key);html+=`<div class='opt ${isTrue?'correct':''}'>${escapeHtml(o.text)}</div>`});});
+    html+='</body></html>';
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    const now=new Date(); const fname=`DeThi_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.html`;
+    a.download=fname; a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  el('btnTheme').onclick=()=>{
+    const isDark=document.body.classList.toggle('dark');
+    el('btnTheme').textContent=isDark?'Chế độ: Tối':'Chế độ: Sáng';
+  };
+  </script>
+</body>
+</html>
