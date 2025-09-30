@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#195bdc" />
   <title>App thi trắc nghiệm từ Excel (v22.1)</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials" />
   <style>
     :root{ --ok:#19c37d; --bad:#ef4444; --bg:#fff; --fg:#111; --card:#fff; --border:#d1d5db; --muted:#6b7280; }
     body.dark{ --bg:#0f172a; --fg:#f1f5f9; --card:#1e293b; --border:#334155; --muted:#94a3b8; }
@@ -228,6 +231,12 @@
     const isDark=document.body.classList.toggle('dark');
     el('btnTheme').textContent=isDark?'Chế độ: Tối':'Chế độ: Sáng';
   };
-  </script>
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed', err));
+    });
+  }
+</script>
 </body>
 </html>
