@@ -1,0 +1,68 @@
+hub1 thephuoc@live.com
+
+git@hub1:thephuoc/GitHub_SSH_2.git
+
+hub2 thephuoc@outlook.com
+
+git@hub2:thephuoc160/Git_Push_SSH.git
+
+
+
+======================================
+I have two Github accounts: oanhnn (personal) and superman (for work). I want to use both accounts on same computer (without typing password everytime, when doing git push or pull).
+https://gist.github.com/oanhnn/80a89405ab9023894df7
+
+
+
+==============
+Caif lai WWin 04.10.2024
+
+==============
+
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH
+$ git init
+Reinitialized existing Git repository in D:/13. Github SH/.git/
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH
+$ git add .
+fatal: detected dubious ownership in repository at 'D:/13. Github SH'
+'D:/13. Github SH' is owned by:
+        (inconvertible) (S-1-5-21-688408851-3229323070-1102274849-1001)
+but the current user is:
+        THEPHUOC/THEPHUOC (S-1-5-21-4177989446-117991016-1628260119-1001)
+To add an exception for this directory, call:
+
+        git config --global --add safe.directory 'D:/13. Github SH'
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH
+$  git config --global --add safe.directory 'D:/13. Github SH'
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$ git add .
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$ git config user.email "thephuoc@outlook.com"
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$ git config user.name  "thephuoc160"
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$ git remote add origin git@hub2:thephuoc160/Git_Push_SSH.git
+error: remote origin already exists.
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$ git remote set-url origin git@hub2:thephuoc160/Git_Push_SSH.git
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$ git remote add origin git@hub2:thephuoc160/Git_Push_SSH.git
+error: remote origin already exists.
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$ git remote add origin git@hub2:thephuoc160/Git_Push_SSH.git
+error: remote origin already exists.
+
+THEPHUOC@THEPHUOC MINGW64 /d/13. Github SH (master)
+$
+okkkkkkkkkkk

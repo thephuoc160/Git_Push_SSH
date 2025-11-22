@@ -1,0 +1,11 @@
+ssh-keygen -t rsa -b 4096 -C "thephuoc@live.com"
+eval $(ssh-agent -s)
+ssh-add ~/.ssh/id_rsa
+clip < ~/.ssh/id_rsa.pub
+
+.............
+$ cat id_rsa.pub
+
+
+
+git clone https://github.com/thephuoc/GitHub_SSH_2.git

@@ -1,452 +1,278 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#195bdc" />
-  <title>App thi trắc nghiệm từ Excel (v22.1)</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials" />
-  <style>
-    :root{ --ok:#19c37d; --bad:#ef4444; --bg:#fff; --fg:#111; --card:#fff; --border:#d1d5db; --muted:#6b7280; }
-    body.dark{ --bg:#0f172a; --fg:#f1f5f9; --card:#1e293b; --border:#334155; --muted:#94a3b8; }
-    body{font-family:Inter,"Be Vietnam Pro",Arial,sans-serif;margin:0;padding:0;background:var(--bg);color:var(--fg);transition:background .3s,color .3s}
-    .wrap{max-width:1200px;margin:24px auto;padding:0 16px}
-    .card{border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;background:var(--card)}
-    .btn{padding:8px 12px;margin:4px 0;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:#f3f4f6}
-    body.dark .btn{background:#334155;color:#f1f5f9}
-    .btn[disabled]{opacity:.5;cursor:not-allowed}
-    .toolbar{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
-    .toolbar .left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .toolbar .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .timer{font-weight:800;font-variant-numeric:tabular-nums;border:1px dashed var(--border);border-radius:10px;padding:8px 10px}
-    .q{font-weight:700;margin:14px 0}
-    .opt{display:flex;gap:10px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:8px 0}
-    .opt.correct{background:#e9fff5;border-color:var(--ok);font-weight:700}
-    .opt.wrong{background:#ffefef;border-color:var(--bad)}
-    .muted{color:var(--muted)}
-    input[type="number"]{width:80px}
-    .stats{margin-left:12px;font-weight:600;color:var(--muted)}
-    .globalstats{margin-left:12px;font-weight:600;color:var(--muted)}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiển Thị Số Từ File</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            color: #1f2937; /* Tailwind gray-800 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 90%; /* Cho phép container rộng hơn */
+        }
+        h1 {
+            font-size: 1.875rem; /* Tailwind text-3xl */
+            font-weight: 700; /* Tailwind font-bold */
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #111827; /* Tailwind gray-900 */
+        }
+        .controls {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 1rem auto;
+            padding: 0.625rem 1rem; /* p-2.5 */
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            border-radius: 0.375rem; /* Tailwind rounded-md */
+            cursor: pointer;
+            background-color: #f9fafb; /* Tailwind gray-50 */
+        }
+        input[type="file"]:hover {
+            border-color: #9ca3af; /* Tailwind gray-400 */
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        /* Khu vực hiển thị chính */
+        #dataDisplayArea {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            border: 2px dashed #9ca3af; /* Tailwind gray-400 */
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            min-height: 150px;
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Cột tự động co giãn */
+            gap: 12px; /* Khoảng cách giữa các mục */
+        }
+        .number-item {
+            padding: 10px 12px;
+            border-radius: 0.375rem; /* Tailwind rounded-md */
+            font-size: 1rem; /* Tailwind text-base */
+            line-height: 1.6;
+            text-align: center;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            word-break: break-all; /* Ngắt từ cho các số quá dài */
+            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+        }
+        .message-text { /* Dùng cho các thông báo */
+            grid-column: 1 / -1; /* Chiếm toàn bộ chiều rộng grid */
+            text-align: center;
+            color: #4b5563; /* Tailwind gray-600 */
+            padding: 1.5rem;
+            font-size: 1rem;
+        }
+        .error-text {
+             grid-column: 1 / -1;
+            text-align: center;
+            color: #ef4444; /* Tailwind red-500 */
+            padding: 1.5rem;
+            font-weight: 500;
+        }
+
+        /* Styles for the new container for numbers outside </html> */
+        .outside-html-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            width: 100%;
+            max-width: 90%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .outside-html-container h2 {
+            font-size: 1.5rem; /* Tailwind text-2xl */
+            font-weight: 600; /* Tailwind font-semibold */
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #1f2937; /* Tailwind gray-800 */
+        }
+        .outside-number-item {
+            display: inline-block;
+            padding: 0.5rem 0.75rem; /* Tailwind p-2 px-3 */
+            margin: 0.25rem; /* Tailwind m-1 */
+            border-radius: 0.375rem; /* Tailwind rounded-md */
+            font-weight: bold;
+            background-color: #ffffff; /* Tailwind bg-white */
+            border: 1px solid #e5e7eb; /* Tailwind border-gray-200 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Tailwind shadow-sm */
+        }
+    </style>
 </head>
-<body class="light">
-  <div class="wrap">
-    <!-- TOP BAR -->
-    <div class="card toolbar">
-      <div class="left">
-        <input id="file" type="file" accept=".xlsx,.xls" />
-        <button id="btnLoad" class="btn">Nạp đề</button>
-        <label>Số câu: <input id="numQ" type="number" value="30" min="1"></label>
-        <label><input id="chkShuffle" type="checkbox" checked> Ngẫu nhiên</label>
-        <button id="btnMake" class="btn">Tạo đề</button>
-        <span id="bankStat" class="muted">Chưa nạp đề</span>
-        <span id="stats" class="stats"></span>
-        <button id="btnTheme" class="btn">Chế độ: Sáng</button>
-      </div>
-      <div class="right">
-        <div class="timer">⏳ <span id="timer">--:--</span></div>
-        <button id="btnSubmit" class="btn" disabled>Nộp bài</button>
-        <button id="btnExport" class="btn" disabled>Lưu bài thi</button>
-        <span id="globalStats" class="globalstats"></span>
-      </div>
+<body>
+    <div class="container">
+        <h1>Trình Hiển Thị Số Nâng Cao</h1>
+
+        <div class="controls">
+            <label for="fileInput" class="block mb-2 text-sm font-medium text-gray-700">Hoặc, chọn một file để hiển thị thủ công:</label>
+            <input type="file" id="fileInput" accept=".txt,.text,.csv">
+        </div>
+
+        <div id="dataDisplayArea">
+            <div id="injectedContentPlaceholder" style="display:none;"> </div>
+        </div>
     </div>
 
-    <!-- FULL-WIDTH QUESTIONS -->
-    <div id="quiz" class="card">Danh sách câu hỏi sẽ hiển thị tại đây…</div>
-  </div>
+    <script>
+        // Hàm xử lý và hiển thị nội dung (tách ra để tái sử dụng)
+        function processAndDisplayContent(rawContent, displayAreaElement) {
+            // rawContent là chuỗi ký tự thô, có thể chứa nhiều dòng
+            var lines = rawContent.split(/[\r\n]+/) // Tách thành các dòng
+                                     .map(line => line.trim()) // Loại bỏ khoảng trắng thừa ở mỗi dòng
+                                     .filter(line => line !== ''); // Loại bỏ các dòng trống
 
-  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script>
-  let bank=[], quiz=[];
-  let secondsLeft=0, tHandle=null;
-  let nextStart=0;
-  let remainingShuffle=[];
-  let lastBatch=[];
+            displayAreaElement.innerHTML = ''; // Xóa nội dung cũ trong khu vực hiển thị
 
-  const el=id=>document.getElementById(id);
-  const initialQuizMsg=el('quiz').innerHTML;
-  const LETTERS=['A','B','C','D','E','F'];
-  const rxKey=/^\s*([A-F])\s*[\.|\)|:|-]?/i;
-
-  function splitLetters(s){
-    return String(s||'').toUpperCase().split(/[^A-F]+/).map(x=>x.trim()).filter(x=>/^[A-F]$/.test(x));
-  }
-  function asKeySet(s){
-    return new Set(splitLetters(s));
-  }
-  function escapeHtml(s){
-    return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-  }
-  function shuffleArr(a){
-    for(let i=a.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [a[i],a[j]]=[a[j],a[i]];
-    }
-    return a;
-  }
-  function resetPools(){
-    nextStart=0;
-    remainingShuffle=[...Array(bank.length).keys()];
-    lastBatch=[];
-  }
-  function ensureShufflePool(n){
-    if(bank.length===0 || remainingShuffle.length>=n) return;
-    const pool=new Set(remainingShuffle);
-    const canSkipLast=n<bank.length && lastBatch.length>0;
-    const excluded=canSkipLast?new Set(lastBatch):null;
-    for(let i=0;i<bank.length;i++){
-      if(excluded && excluded.has(i)) continue;
-      pool.add(i);
-    }
-    remainingShuffle=Array.from(pool);
-    if(remainingShuffle.length<n){
-      remainingShuffle=[...Array(bank.length).keys()];
-    }
-  }
-  function buildQuizFromIndices(indices){
-    quiz=indices.map(i=>{
-      const base=bank[i];
-      return {
-        question: base.question,
-        opts: base.opts,
-        correct: base.correct,
-        selected: new Set()
-      };
-    });
-  }
-  function calcRight(){
-    let right=0;
-    quiz.forEach(q=>{
-      const picked=Array.from(q.selected);
-      if(q.correct.size<=1){
-        if(picked.length===1 && q.correct.has(picked[0])) right++;
-      } else if(picked.length===q.correct.size && picked.every(k=>q.correct.has(k))){
-        right++;
-      }
-    });
-    return right;
-  }
-  function refreshStats(){
-    const total=quiz.length||0;
-    const right=calcRight();
-    if(total){
-      const percent=((right/total)*100).toFixed(1);
-      el('stats').textContent=`Dung ${right}/${total}`;
-      el('globalStats').textContent=`Tong dung: ${right}/${total} (${percent}%)`;
-    } else {
-      el('stats').textContent='';
-      el('globalStats').textContent='';
-    }
-    return right;
-  }
-  function clearQuiz(){
-    quiz=[];
-    el('quiz').innerHTML=initialQuizMsg;
-    el('btnSubmit').disabled=true;
-    el('btnExport').disabled=true;
-    refreshStats();
-    stopTimer();
-    el('timer').textContent='--:--';
-  }
-  function validateBank(){
-    const issues=[];
-    bank.forEach((q,idx)=>{
-      const prefix=`Cau ${idx+1}`;
-      if(!q.question || !String(q.question).trim()){
-        issues.push(`${prefix}: thieu noi dung cau hoi.`);
-      }
-      if(!Array.isArray(q.opts) || q.opts.length===0){
-        issues.push(`${prefix}: khong co lua chon tra loi.`);
-      }
-      const seen=new Set();
-      q.opts.forEach((opt,optIdx)=>{
-        const key=(opt.key||'').toString().toUpperCase();
-        if(seen.has(key)){
-          issues.push(`${prefix}: trung lua chon ${key}.`);
-        } else {
-          seen.add(key);
-        }
-        if(!opt.text || !String(opt.text).trim()){
-          issues.push(`${prefix}: lua chon thu ${optIdx+1} bi trong.`);
-        }
-      });
-      if(q.correct.size===0){
-        issues.push(`${prefix}: chua danh dau dap an dung.`);
-      } else {
-        q.correct.forEach(key=>{
-          if(!seen.has(key)){
-            issues.push(`${prefix}: dap an ${key} khong ton tai trong lua chon.`);
-          }
-        });
-      }
-    });
-    return issues;
-  }
-  function fmt(secs){
-    const m=String(Math.floor(secs/60)).padStart(2,'0');
-    const s=String(secs%60).padStart(2,'0');
-    return `${m}:${s}`;
-  }
-  function stopTimer(){
-    if(tHandle){
-      clearInterval(tHandle);
-      tHandle=null;
-    }
-  }
-  function startTimer(mins){
-    stopTimer();
-    secondsLeft=Math.max(1,mins)*60;
-    el('timer').textContent=fmt(secondsLeft);
-    tHandle=setInterval(()=>{
-      secondsLeft--;
-      el('timer').textContent=fmt(Math.max(0,secondsLeft));
-      if(secondsLeft<=0){
-        stopTimer();
-        autoSubmit();
-      }
-    },1000);
-  }
-
-  el('btnLoad').onclick=async()=>{
-    const f=el('file').files?.[0];
-    if(!f){
-      alert('Chon file');
-      return;
-    }
-    try{
-      const ab=await f.arrayBuffer();
-      const wb=XLSX.read(ab,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{defval:"",raw:true});
-      bank=[];
-      let cur=null;
-      rows.forEach(r=>{
-        const A=(r['NoiDung']??'').toString();
-        const B=(r['DapAnDung']??'').toString();
-        const D=(r['CauHoi']??'').toString().trim().toUpperCase();
-        if(D==='CH'){
-          cur={question:A,opts:[],correct:asKeySet(B),_used:new Set()};
-          bank.push(cur);
-        } else if(cur && A.trim()!==''){
-          let key='';
-          const m=A.match(rxKey);
-          if(m){
-            key=m[1].toUpperCase();
-          } else {
-            key=LETTERS.find(ch=>!cur._used.has(ch))||'X';
-          }
-          if(cur._used.has(key)){
-            key=LETTERS.find(ch=>!cur._used.has(ch))||key;
-          }
-          cur._used.add(key);
-          cur.opts.push({key,text:A});
-          const mark=B.toString().trim();
-          if(mark!==''){
-            const letters=splitLetters(mark);
-            if(letters.length===0 || letters.includes(key)){
-              cur.correct.add(key);
+            if (lines.length === 0) {
+                displayAreaElement.innerHTML = '<p class="message-text">Nội dung rỗng hoặc không chứa mục hợp lệ.</p>';
+                return;
             }
-          }
+
+            lines.forEach(function(lineContent) {
+                var itemDiv = document.createElement('div');
+                itemDiv.classList.add('number-item');
+                itemDiv.innerText = lineContent; // Hiển thị nội dung text của dòng
+
+                // Tạo màu ngẫu nhiên và đảm bảo là 6 ký tự hex
+                var randomColor = '#' + ('000000' + Math.floor(Math.random() * 16777215).toString(16)).slice(-6);
+                itemDiv.style.color = randomColor; // Đặt màu cho số
+                itemDiv.style.fontWeight = 'bold'; // Bôi đậm số
+
+                displayAreaElement.appendChild(itemDiv); // Thêm mục vào khu vực hiển thị
+            });
         }
-      });
-      bank.forEach(q=>delete q._used);
-      resetPools();
-      clearQuiz();
-      const issues=validateBank();
-      let status=`Da nap ${bank.length} cau hoi.`;
-      if(issues.length){
-        console.warn('Canh bao ngan hang cau hoi:', issues);
-        const preview=issues.slice(0,5).map(msg=>`- ${msg}`).join('\n');
-        alert(`Phat hien ${issues.length} canh bao trong file cau hoi:\n${preview}${issues.length>5?'\n- ...':''}`);
-        status+=` - ${issues.length} canh bao.`;
-      }
-      el('bankStat').textContent=status;
-    } catch(err){
-      console.error('Khong the doc file Excel', err);
-      alert('Khong the doc file. Vui long thu lai.');
-    }
-  };
 
-  el('btnMake').onclick=()=>{
-    if(bank.length===0){
-      alert('Ban chua nap de?');
-      return;
-    }
-    const want=parseInt(el('numQ').value||'30',10);
-    const n=Math.max(1,Math.min(Number.isFinite(want)?want:30,bank.length));
-    const doShuffle=el('chkShuffle').checked;
+        // FUNCTION: Processes and displays numbers found after </html> tag
+        function processAndDisplayOutsideHtmlContent() {
+            // This string now includes ALL numbers currently present after </html> in the Canvas editor.
+            // If you add more numbers after </html> in the Canvas, update this string accordingly.
+const numbersStringFromFileEnd = "29345731959\n21860\n31776\n21071\n8436\n22679\n22517\n4990\n554\n15043\n20104\n27798\n32171\n1935\n18999\n10901\n31390\n10655\n7439\n20194\n22317\n19104\n32170\n20504\n14908\n668\n12400\n21028\n13781\n5298\n32494\n2439\n29706\n7081\n28265\n20613\n14725\n22102\n2155\n19338\n6958\n28759\n13663\n10221\n23077\n25837\n16208\n18565\n593\n12421\n21800\n31624\n28443\n27563\n9235\n1102\n31624\n17587\n20067\n31736\n32272\n23407\n30400\n19593\n17485\n19739\n1233\n10688\n6390\n22365\n20235\n1201\n26964\n31447\n";
 
-    if(doShuffle){
-      ensureShufflePool(n);
-      shuffleArr(remainingShuffle);
-      const pick=remainingShuffle.splice(0,n);
-      lastBatch=pick.slice();
-      buildQuizFromIndices(pick);
-    } else {
-      const start=nextStart;
-      const end=Math.min(start+n,bank.length);
-      const idx=[];
-      for(let i=start;i<end;i++) idx.push(i);
-      if(end-start<n && bank.length>0){
-        for(let i=0;i<n-(end-start);i++) idx.push(i);
-      }
-      lastBatch=idx.slice();
-      nextStart=(start+n)%bank.length;
-      buildQuizFromIndices(idx);
-    }
+            const numbersArray = numbersStringFromFileEnd.split(/\s+/) // Split by any whitespace
+                                                     .map(s => s.trim())
+                                                     .filter(s => s !== "" && !isNaN(s)); // Keep only valid numbers
 
-    renderQuiz();
-    el('btnSubmit').disabled=false;
-    el('btnExport').disabled=false;
-    startTimer(quiz.length);
-    refreshStats();
-  };
-
-  function renderQuiz(){
-    const box=el('quiz');
-    box.innerHTML='';
-    quiz.forEach((q,i)=>{
-      const card=document.createElement('div');
-      card.className='qcard';
-      card.innerHTML=`<div class='q'>Cau ${i+1}. ${escapeHtml(q.question)}</div>`;
-      const multi=q.correct.size>1;
-      q.opts.forEach(o=>{
-        const key=(o.key||'').toString().toUpperCase();
-        const line=document.createElement('label');
-        line.className='opt';
-        const inp=document.createElement('input');
-        inp.type=multi?'checkbox':'radio';
-        inp.name='q'+i;
-        inp.value=key;
-        inp.checked=q.selected.has(key);
-        inp.addEventListener('change',()=>{
-          if(multi){
-            if(inp.checked){
-              q.selected.add(key);
-            } else {
-              q.selected.delete(key);
+            if (numbersArray.length === 0) {
+                console.info("No valid numbers found in the 'numbersStringFromFileEnd' string to display.");
+                return;
             }
-          } else {
-            q.selected.clear();
-            if(inp.checked){
-              q.selected.add(key);
+
+            // Create a container for these numbers if it doesn't exist
+            let outsideContainer = document.getElementById('outsideHtmlNumbersContainer');
+            if (!outsideContainer) {
+                outsideContainer = document.createElement('div');
+                outsideContainer.id = 'outsideHtmlNumbersContainer';
+                outsideContainer.classList.add('outside-html-container'); // Apply new styles
+                
+                const titleElement = document.createElement('h2');
+                titleElement.innerHTML = "Các số được tìm thấy trong file Text.txt"; // Using innerHTML to render &lt; and &gt;
+                outsideContainer.appendChild(titleElement);
+                
+                document.body.appendChild(outsideContainer); // Append to body to make it visible
             }
-          }
-          refreshStats();
-        });
-        line.appendChild(inp);
-        line.appendChild(document.createTextNode(' '+o.text));
-        card.appendChild(line);
-      });
-      const peek=document.createElement('button');
-      peek.className='btn';
-      peek.textContent='Kiem tra cau nay';
-      peek.onclick=()=>{
-        peekQuestion(card,q);
-        refreshStats();
-      };
-      card.appendChild(peek);
-      box.appendChild(card);
-    });
-  }
+            
+            // Clear previous numbers if any from this specific display area
+            const existingNumbersDisplayDiv = outsideContainer.querySelector('.flex.flex-wrap.justify-center.gap-2.mt-2');
+            if (existingNumbersDisplayDiv) {
+                existingNumbersDisplayDiv.innerHTML = ''; // Clear only the numbers generated by this function
+            }
 
-  function peekQuestion(card,q){
-    card.querySelectorAll('label.opt').forEach(l=>{
-      l.classList.remove('correct','wrong');
-      const key=l.querySelector('input').value.toUpperCase();
-      if(q.correct.has(key)){
-        l.classList.add('correct');
-      }
-    });
-  }
+            const numbersDisplayDiv = existingNumbersDisplayDiv || document.createElement('div');
+            if (!existingNumbersDisplayDiv) { // Only add classes if it's a new div
+                 numbersDisplayDiv.classList.add('flex', 'flex-wrap', 'justify-center', 'gap-2', 'mt-2'); // Tailwind classes for layout
+            }
 
-  function gradeAndPaint(){
-    const cards=document.querySelectorAll('.qcard');
-    let right=0;
-    quiz.forEach((q,i)=>{
-      const card=cards[i];
-      const picked=new Set(q.selected);
-      card.querySelectorAll('label.opt').forEach(l=>{
-        l.classList.remove('correct','wrong');
-        const input=l.querySelector('input');
-        const key=input.value.toUpperCase();
-        if(input.checked){
-          picked.add(key);
-        } else {
-          picked.delete(key);
+
+            numbersArray.forEach(numberStr => {
+                const numberSpan = document.createElement('span');
+                numberSpan.classList.add('outside-number-item'); // Apply new styles
+                numberSpan.textContent = numberStr;
+                
+                const randomColor = '#' + ('000000' + Math.floor(Math.random() * 16777215).toString(16)).slice(-6);
+                numberSpan.style.color = randomColor;
+                
+                numbersDisplayDiv.appendChild(numberSpan);
+            });
+            
+            if (!existingNumbersDisplayDiv) { // Only append if it's a new div
+                outsideContainer.appendChild(numbersDisplayDiv);
+            }
         }
-        if(q.correct.has(key)){
-          l.classList.add('correct');
-        } else if(input.checked){
-          l.classList.add('wrong');
-        }
-      });
-      q.selected=picked;
-      const chosen=Array.from(picked);
-      if(q.correct.size<=1){
-        if(chosen.length===1 && q.correct.has(chosen[0])) right++;
-      } else if(chosen.length===q.correct.size && chosen.every(k=>q.correct.has(k))){
-        right++;
-      }
-    });
-    const total=quiz.length||0;
-    if(total){
-      const percent=((right/total)*100).toFixed(1);
-      el('stats').textContent=`Dung ${right}/${total}`;
-      el('globalStats').textContent=`Tong dung: ${right}/${total} (${percent}%)`;
-    } else {
-      el('stats').textContent='';
-      el('globalStats').textContent='';
-    }
-    return right;
-  }
 
-  function autoSubmit(){
-    const right=gradeAndPaint();
-    el('btnSubmit').disabled=true;
-    alert(`Het gio. Ban dung ${right}/${quiz.length} cau.`);
-  }
 
-  el('btnSubmit').onclick=()=>{
-    stopTimer();
-    const right=gradeAndPaint();
-    el('btnSubmit').disabled=true;
-    alert(`Ban lam dung ${right}/${quiz.length} cau.`);
-  };
+        window.onload = function() {
+            var fileInput = document.getElementById('fileInput');
+            var dataDisplayArea = document.getElementById('dataDisplayArea'); // Khu vực hiển thị chính
+            var injectedContentContainer = document.getElementById('injectedContentPlaceholder');
+            
+            // Chuỗi placeholder mà script Push.sh sẽ tìm và thay thế
+            var placeholderCommentString = '';
 
-  el('btnExport').onclick=()=>{
-    const src=quiz.length?quiz:bank;
-    let html=`<!DOCTYPE html><html lang='vi'><head><meta charset='utf-8'><title>Bai thi duoc luu</title><style>body{font-family:Inter,Arial,sans-serif;padding:20px;line-height:1.6;color:#111}.q{font-weight:700;margin-top:16px}.opt{margin:6px 0;padding:8px;border:1px solid #ccc;border-radius:8px}.correct{background:#e9fff5;border-color:#19c37d;font-weight:700}</style></head><body>`;
-    src.forEach((q,i)=>{
-      html+=`<div class='q'>Cau ${i+1}. ${escapeHtml(q.question)}</div>`;
-      q.opts.forEach(o=>{
-        const optKey=(o.key||'').toString().toUpperCase();
-        const isTrue=q.correct.has(optKey);
-        html+=`<div class='opt ${isTrue?'correct':''}'>${escapeHtml(o.text)}</div>`;
-      });
-    });
-    html+='</body></html>';
-    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    const now=new Date();
-    const fname=`DeThi_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.html`;
-    a.download=fname;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
+            var preloadedContentFound = false;
 
-  el('btnTheme').onclick=()=>{
-    const isDark=document.body.classList.toggle('dark');
-    el('btnTheme').textContent=isDark?'Che do: Toi':'Che do: Sang';
-  };
+            if (injectedContentContainer) {
+                var rawInjectedHTML = injectedContentContainer.innerHTML.trim();
 
-  if('serviceWorker' in navigator){
-    window.addEventListener('load',()=>{
-      navigator.serviceWorker.register('sw.js').catch(err=>console.error('SW registration failed',err));
-    });
-  }
-</script>
+                // Kiểm tra xem nội dung có phải là placeholder không, và có rỗng không
+                if (rawInjectedHTML !== placeholderCommentString && rawInjectedHTML !== '') {
+                    // Nội dung đã được script Push.sh chèn vào (nó không còn là comment placeholder nữa)
+                    processAndDisplayContent(rawInjectedHTML, dataDisplayArea);
+                    preloadedContentFound = true;
+                }
+                // Xóa container của placeholder sau khi đã kiểm tra, bất kể nó có nội dung hay không
+                // Ensure it exists before trying to remove
+                if (injectedContentContainer.parentNode) {
+                    injectedContentContainer.remove();
+                }
+            }
+
+            if (!preloadedContentFound) {
+                // Nếu không có nội dung được chèn sẵn (hoặc #injectedContentPlaceholder không tồn tại)
+                dataDisplayArea.innerHTML = '<p class="message-text">Không có nội dung được tải sẵn. Vui lòng chọn một file từ máy tính của bạn.</p>';
+            }
+
+            // Thiết lập trình xử lý cho việc chọn file thủ công
+            fileInput.addEventListener('change', function(e) {
+                var file = e.target.files[0];
+                if (!file) {
+                    dataDisplayArea.innerHTML = '<p class="error-text">Vui lòng chọn một file.</p>';
+                    return;
+                }
+
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    // Hiển thị nội dung từ file người dùng chọn vào dataDisplayArea
+                    processAndDisplayContent(event.target.result, dataDisplayArea);
+                };
+                reader.onerror = function() {
+                    dataDisplayArea.innerHTML = '<p class="error-text">Không thể đọc file. Đã có lỗi xảy ra.</p>';
+                    console.error("Lỗi khi đọc file:", reader.error);
+                };
+                reader.readAsText(file); // Đọc nội dung file dưới dạng text
+            });
+
+            // Call the function to display numbers from outside </html>
+            processAndDisplayOutsideHtmlContent();
+        };
+    </script>
 </body>
 </html>
