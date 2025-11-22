@@ -9,12 +9,11 @@ git commit -m "Add Text.txt with random number"
 
 git add .
 
-# git remote add origin https://thephuoc160@github.com/thephuoc160/Git_Push_SSH.git
-git remote add origin git@hub1:thephuoc/GitHub_SSH_2.git
+# git remote add origin git@hub2:thephuoc160/Git_Push_SSH.git
 
 git commit -m "$(date +%d-%m-%Y) new add file with random number"
 
-git push -u origin master --force
+git push -u origin main --force
 
 #!/bin/bash
 
@@ -48,5 +47,5 @@ git add "$current_directory/index.html"
 # Commit the changes to the `index.html` file
 git commit -m "$(date +%d-%m-%Y) Auto-added body of `text.txt` file to `index.html` file."
 
-git push -u origin master --force
+git push -u origin main --force
 
