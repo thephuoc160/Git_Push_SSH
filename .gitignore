@@ -8,3 +8,4 @@ obj/
 *.sln.docstates
 *.vscode/
 *.xlsx
+*.csv

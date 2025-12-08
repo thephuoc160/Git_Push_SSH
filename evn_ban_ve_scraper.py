@@ -215,8 +215,8 @@ def main():
     
     # Cấu hình
     RESERVOIR_NAME = "Bản Vẽ"
-    START_DATE = datetime(2025, 7, 15, 0, 0)    # 15/07/2025 00:00
-    END_DATE = datetime(2025, 7, 31, 23, 0)     # 31/07/2025 23:00
+    START_DATE = datetime(2025, 8, 1, 0, 0)     # 01/08/2025 00:00 (chỉ lấy dữ liệu mới)
+    END_DATE = datetime(2025, 8, 7, 23, 0)      # 07/08/2025 23:00
     OUTPUT_FILE = "ban_ve_water_level.csv"
     OUTPUT_EXCEL = "ban_ve_water_level.xlsx"
     
@@ -232,13 +232,30 @@ def main():
         df = scraper.scrape_date_range(START_DATE, END_DATE, RESERVOIR_NAME)
         
         if df is not None and not df.empty:
-            # Lưu vào CSV
-            df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
-            logger.info(f"Dữ liệu đã được lưu vào {OUTPUT_FILE}")
+            # Lưu vào CSV (append mode)
+            import os
+            if os.path.exists(OUTPUT_FILE):
+                # Append vào file CSV hiện có
+                df.to_csv(OUTPUT_FILE, mode='a', header=False, index=False, encoding='utf-8-sig')
+                logger.info(f"Dữ liệu mới đã được thêm vào {OUTPUT_FILE}")
+            else:
+                # Tạo file mới
+                df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
+                logger.info(f"Dữ liệu đã được lưu vào {OUTPUT_FILE}")
             
-            # Lưu vào Excel
-            df.to_excel(OUTPUT_EXCEL, index=False, engine='openpyxl')
-            logger.info(f"Dữ liệu đã được lưu vào {OUTPUT_EXCEL}")
+            # Lưu vào Excel (append mode)
+            if os.path.exists(OUTPUT_EXCEL):
+                # Đọc dữ liệu cũ
+                df_old = pd.read_excel(OUTPUT_EXCEL, engine='openpyxl')
+                # Gộp dữ liệu cũ và mới
+                df_combined = pd.concat([df_old, df], ignore_index=True)
+                # Lưu lại
+                df_combined.to_excel(OUTPUT_EXCEL, index=False, engine='openpyxl')
+                logger.info(f"Dữ liệu mới đã được thêm vào {OUTPUT_EXCEL} (Tổng: {len(df_combined)} bản ghi)")
+            else:
+                # Tạo file mới
+                df.to_excel(OUTPUT_EXCEL, index=False, engine='openpyxl')
+                logger.info(f"Dữ liệu đã được lưu vào {OUTPUT_EXCEL}")
             
             # Hiển thị tóm tắt
             print("\n" + "="*70)
